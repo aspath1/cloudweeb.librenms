@@ -1,0 +1,61 @@
+---
+
+- name: install LibreNMS required packages
+  yum:
+    name: "{{ librenms_required_packages }}"
+
+- name: Create LibreNMS group
+  group:
+    name: "{{ librenms_group }}"
+    system: true
+    state: present
+
+- name: Create LibreNMS user
+  user:
+    name: "{{ librenms_user }}"
+    home: "{{ librenms_home_dir }}"
+    create_home: false
+    shell: /sbin/nologin
+    system: true
+    state: present
+
+- name: Add LibreNMS group to web server user
+  user:
+    name: "{{ librenms_web_user }}"
+    groups: "{{ librenms_user }}"
+    append: true
+
+- name: Ensure LibreNMS root dir already exist
+  file:
+    path: "{{ librenms_home_dir }}"
+    state: directory
+    owner: "{{ librenms_user }}"
+    group: "{{ librenms_group }}"
+    mode: g+w
+
+- name: Install LibreNMS
+  git:
+    repo: https://github.com/librenms/librenms.git
+    dest: "{{ librenms_home_dir }}"
+    version: master
+  register: __librenms_install_status
+  become: true
+  become_user: "{{ librenms_user }}"
+
+- name: Install missing dependencies
+  command: ./scripts/composer_wrapper.php install --no-dev
+  args:
+    chdir: "{{ librenms_home_dir }}"
+  when: __librenms_install_status is changed
+
+- name: Create LibreNMS database
+  mysql_db:
+    name: "{{ librenms_db_name }}"
+    collation: utf8_unicode_ci
+    state: present
+
+- name: Add LibreNMS user database
+  mysql_user:
+    name: "{{ librenms_db_user }}"
+    password: "{{ librenms_db_pass }}"
+    priv: '{{ librenms_db_name }}.*:ALL'

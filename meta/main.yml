@@ -1,0 +1,23 @@
+---
+dependencies:
+  - geerlingguy.repo-epel
+  - geerlingguy.apache
+  - cloudweeb.php
+  - cloudweeb.mariadb
+
+galaxy_info:
+  role_name: librenms
+  author: Agnesius Santo Naibaho
+  description: LibreNMS Installation Role
+  company: "Cloudweeb"
+  license: "license (BSD, MIT)"
+  min_ansible_version: 2.7
+  platforms:
+    - name: EL
+      versions:
+        - 7
+  galaxy_tags:
+    - librenms
+    - nms
+    - monitoring
+    - network

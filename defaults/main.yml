@@ -1,0 +1,14 @@
+---
+
+librenms_user: librenms
+librenms_group: '{{ librenms_user }}'
+librenms_home_dir: /opt/librenms
+
+librenms_db_host: localhost
+librenms_db_name: librenms
+librenms_db_user: librenms
+librenms_db_pass: librenms
+
+librenms_admin_acct:
+  - user: admin
+    pass: admin

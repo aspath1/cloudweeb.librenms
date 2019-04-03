@@ -1,0 +1,6 @@
+---
+
+- src: geerlingguy.repo-epel
+- src: geerlingguy.apache
+- src: cloudweeb.php
+- src: cloudweeb.mariadb

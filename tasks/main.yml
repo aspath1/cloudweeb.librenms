@@ -1,0 +1,18 @@
+---
+
+- name: Include OS-specific variables.
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: ['librenms_install', 'librenms_configure', 'librenms_selinux']
+
+- import_tasks: install.yml
+  tags: ['librenms_install']
+
+- import_tasks: configure.yml
+  tags: ['librenms_configure']
+
+- include_tasks: selinux.yml
+  when: ansible_selinux.status == 'enabled'
+  tags: ['librenms_selinux']

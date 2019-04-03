@@ -1,0 +1,54 @@
+---
+
+- name: Install the policy tool for SELinux
+  yum:
+    name: ['policycoreutils-python', 'libselinux-python', 'libsemanage-python']
+    state: present
+
+- name: Configure the contexts needed by LibreNMS
+  sefcontext:
+    target: "{{ item.[0] }}"
+    setype: "{{ item.[1] }}"
+    state: present
+  with_nested:
+    - ['httpd_sys_content_t', 'httpd_sys_rw_content_t']
+    - - '/opt/librenms/logs(/.*)?'
+      - '/opt/librenms/rrd(/.*)?'
+      - '/opt/librenms/storage(/.*)?'
+      - '/opt/librenms/bootstrap/cache(/.*)?'
+
+- name: Apply new SELinux file context
+  command: restorecon -RFvv /opt/librenms/bootstrap/cache/
+  changed_when: false
+
+- name: Set SElinux permissions for web server
+  seboolean:
+    name: "{{ item.name }}"
+    state: true
+    persistent: true
+  loop: ['httpd_can_sendmail', 'httpd_execmem']
+
+- name: Create http_fping.tt file
+  copy:
+    content: |
+      module http_fping 1.0;
+
+      require {
+      type httpd_t;
+      class capability net_raw;
+      class rawip_socket { getopt create setopt write read };
+      }
+
+      #============= httpd_t ==============
+      allow httpd_t self:capability net_raw;
+      allow httpd_t self:rawip_socket { getopt create setopt write read };
+    dest: /tmp/http_fping.tt
+
+- name: Allow fping
+  command: >
+    checkmodule -M -m -o http_fping.mod http_fping.tt;
+    semodule_package -o http_fping.pp -m http_fping.mod;
+    semodule -i http_fping.pp
+  args:
+    chdir: /tmp
+  changed_when: false

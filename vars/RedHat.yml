@@ -1,0 +1,16 @@
+---
+
+librenms_web_user: apache
+
+librenms_required_packages:
+  - cronie
+  - fping
+  - git
+  - ImageMagick
+  - jwhois
+  - mtr
+  - net-snmp
+  - net-snmp-utils
+  - nmap
+  - python-memcached
+  - rrdtool

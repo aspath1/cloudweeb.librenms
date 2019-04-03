@@ -1,0 +1,61 @@
+---
+
+- name: Configure LibreNMS logrotate and cron
+  copy:
+    src: "{{ librenms_home_dir }}/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    remote_src: true
+  loop:
+    - { src: librenms.nonroot.cron, dest: /etc/cron.d/librenms }
+    - { src: misc/librenms.logrotate, dest: /etc/logrotate.d/librenms }
+
+- name: Set LibreNMS config file
+  template:
+    src: librenms_config.php.j2
+    dest: "{{ librenms_home_dir }}/config.php"
+    owner: "{{ librenms_user }}"
+    group: "{{ librenms_group }}"
+
+- name: Propagate LibreNMS database
+  command: php build-base.php
+  args:
+    chdir: "{{ librenms_home_dir }}"
+  register: __librenms_build_db
+  changed_when: "'Nothing to migrate.' not in __librenms_build_db.stdout"
+
+- name: Set the appropriate ownership and permissions
+  file:
+    path: "{{ librenms_home_dir }}"
+    owner: "{{ librenms_user }}"
+    group: "{{ librenms_group }}"
+    mode: g+w
+    recurse: true
+
+- name: Set the appropriate acl
+  acl:
+    path: "{{ librenms_home_dir }}/{{ item }}"
+    etype: group
+    permissions: rwx
+    recursive: true
+    default: true
+    state: present
+  loop:
+    - rrd
+    - logs
+    - bootstrap/cache/
+    - storage
+
+- name: get list of users
+  command: >
+    mysql -u {{ librenms_db_user }} -p'{{ librenms_db_pass }}' {{ librenms_db_name }} -Ns -e "select username from users"
+  changed_when: false
+  register: librenms_user_list
+
+- name: Add LibreNMS admin account
+  command: php adduser.php {{ item.user }} {{ item.pass }} 10
+  args:
+    chdir: "{{ librenms_home_dir }}"
+  become: true
+  become_user: "{{ librenms_user }}"
+  when: item.user not in librenms_user_list.stdout_lines
+  loop: "{{ librenms_admin_acct }}"
