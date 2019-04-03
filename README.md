@@ -1,7 +1,7 @@
 Ansible Role LibreNMS
 =========
 
-[![Build Status](https://travis-ci.com/cloudweeb/cloudweeb.librenms.svg?branch=master)](https://travis-ci.com/cloudweeb/cloudweeb.php)
+[![Build Status](https://travis-ci.com/cloudweeb/cloudweeb.librenms.svg?branch=master)](https://travis-ci.com/cloudweeb/cloudweeb.librenms)
 
 Ansible role to install LibreNMS on Linux Server
 
