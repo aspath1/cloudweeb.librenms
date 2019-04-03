@@ -38,6 +38,7 @@
     repo: https://github.com/librenms/librenms.git
     dest: "{{ librenms_home_dir }}"
     version: master
+    update: false
   register: __librenms_install_status
   become: true
   become_user: "{{ librenms_user }}"
@@ -46,6 +47,8 @@
   command: ./scripts/composer_wrapper.php install --no-dev
   args:
     chdir: "{{ librenms_home_dir }}"
+  become: true
+  become_user: "{{ librenms_user }}"
   when: __librenms_install_status is changed
 
 - name: Create LibreNMS database
