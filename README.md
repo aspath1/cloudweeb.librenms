@@ -30,15 +30,14 @@ Dependencies
 ------------
 
 - role: geerlingguy.repo-epel
-- role: geerlingguy.apache
+- role: geerlingguy.apache / geerlingguy.nginx
 - role: cloudweeb.php
 - role: cloudweeb.mariadb
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables
-passed in as parameters) is always nice for users too:
+LibreNMS + LAMP
 
     - hosts: servers
       vars:
@@ -78,6 +77,79 @@ passed in as parameters) is always nice for users too:
         - cloudweeb.php
         - cloudweeb.mariadb
         - cloudweeb.librenms
+
+LibreNMS + LEMP
+
+---
+
+    - hosts: servers
+      vars:
+
+        librenms_db_pass: "{{ lookup('password',
+                                '/tmp/passwordfile
+                                chars=ascii_letters,digits,hexdigits,punctuation'
+                                ) }}"
+
+        nginx_vhosts:
+          - listen: "80"
+            server_name: "nms.example.com"
+            root: "/opt/librenms/html"
+            index: "index.php index.html index.htm"
+            state: "present"
+            template: "{{ nginx_vhost_template }}"
+            extra_parameters: |
+              location / {
+                try_files $uri $uri/ /index.php?$query_string;
+
+                location ~* ^.+\.(jpeg|jpg|png|gif|bmp|ico|svg|css|js)$ {
+                    expires     max;
+                }
+
+                location ~ [^/]\.php(/|$) {
+                    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                    if (!-f $document_root$fastcgi_script_name) {
+                        return  404;
+                    }
+
+                    fastcgi_pass    unix:/var/run/php-librenms.sock;
+                    fastcgi_index   index.php;
+                    include         /etc/nginx/fastcgi_params;
+                }
+
+              }
+              location /api/v0 {
+                try_files $uri $uri/ /api_v0.php?$query_string;
+              }
+              location ~ /\.ht {
+                deny all;
+              }
+
+        php_version: 7.2
+        php_fpm_enabled: true
+
+        php_extra_packages:
+          - composer
+          - php-mysqlnd
+          - php-curl
+          - php-gd
+          - php-mbstring
+          - php-process
+          - php-snmp
+          - php-xml
+          - php-zip
+
+        mariadb_root_password: "{{ lookup('password', '/tmp/mysql_root_password
+                                        length=15
+                                        chars=ascii_letters,digits,hexdigits') }}"
+
+      roles:
+
+        - geerlingguy.repo-epel
+        - geerlingguy.nginx
+        - cloudweeb.php
+        - cloudweeb.mariadb
+        - cloudweeb.librenms
+
 
 License
 -------
